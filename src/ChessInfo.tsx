@@ -1,20 +1,30 @@
 import type { Piece, Square } from './chessTypes'
+import type { GameStatus } from './chessRules'
 import { pieceText } from './chessTypes'
 
 export type ChessInfoProps = {
   turn: 'w' | 'b'
   selectedPiece: Piece | null
   legalMoves: Square[]
+  status: GameStatus
 }
 
-export const ChessInfo = ({ turn, selectedPiece, legalMoves }: ChessInfoProps) => {
+const statusText = (status: GameStatus): string => {
+  if (status === 'check') return '将军'
+  if (status === 'checkmate') return '将死'
+  if (status === 'stalemate') return '逼和'
+  return '进行中'
+}
+
+export const ChessInfo = ({ turn, selectedPiece, legalMoves, status }: ChessInfoProps) => {
   return (
     <div className="info">
-      <h1>Chess (文本棋子)</h1>
-      <p>当前回合: {turn === 'w' ? '白方' : '黑方'}</p>
-      <p>选中棋子: {selectedPiece ? pieceText(selectedPiece) : '无'}</p>
-      <p>可走位置: {legalMoves.length}</p>
-      <p className="hint">提示: 点击棋子后点击目标格子，或直接拖拽棋子</p>
+      <h1>Chess (Text Pieces)</h1>
+      <p>Turn: {turn === 'w' ? 'White' : 'Black'}</p>
+      <p>Status: {statusText(status)}</p>
+      <p>Selected: {selectedPiece ? pieceText(selectedPiece) : 'None'}</p>
+      <p>Legal targets: {legalMoves.length}</p>
+      <p className="hint">Tip: click then move, or drag and drop</p>
     </div>
   )
 }

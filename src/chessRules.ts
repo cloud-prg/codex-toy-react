@@ -3,9 +3,6 @@ import type { Board, Color, Piece, PieceType, Square } from './chessTypes'
 const inBounds = (file: number, rank: number): boolean =>
   file >= 0 && file < 8 && rank >= 0 && rank < 8
 
-const getPiece = (board: Board, sq: Square): Piece | null =>
-  board[sq.rank][sq.file]
-
 const isEnemy = (a: Piece, b: Piece | null): boolean =>
   b !== null && a.color !== b.color
 
@@ -36,18 +33,20 @@ const addRayMoves = (
   from: Square,
   moves: Square[]
 ) => {
-  let f = from.file + df
-  let r = from.rank + dr
-  while (inBounds(f, r)) {
-    const target = board[r][f]
+  let file = from.file + df
+  let rank = from.rank + dr
+  while (inBounds(file, rank)) {
+    const target = board[rank][file]
     if (target === null) {
-      moves.push({ file: f, rank: r })
+      moves.push({ file, rank })
     } else {
-      if (isEnemy(piece, target)) moves.push({ file: f, rank: r })
+      if (isEnemy(piece, target)) {
+        moves.push({ file, rank })
+      }
       break
     }
-    f += df
-    r += dr
+    file += df
+    rank += dr
   }
 }
 
@@ -61,25 +60,35 @@ const pawnMoves = (board: Board, piece: Piece, from: Square): Square[] => {
     moves.push({ file: from.file, rank: oneRank })
 
     const twoRank = from.rank + dir * 2
-    if (
-      from.rank === startRank &&
-      board[twoRank][from.file] === null
-    ) {
+    if (from.rank === startRank && board[twoRank][from.file] === null) {
       moves.push({ file: from.file, rank: twoRank })
     }
   }
 
   for (const df of [-1, 1]) {
-    const f = from.file + df
-    const r = from.rank + dir
-    if (!inBounds(f, r)) continue
-    const target = board[r][f]
+    const file = from.file + df
+    const rank = from.rank + dir
+    if (!inBounds(file, rank)) continue
+    const target = board[rank][file]
     if (target && isEnemy(piece, target)) {
-      moves.push({ file: f, rank: r })
+      moves.push({ file, rank })
     }
   }
 
   return moves
+}
+
+const pawnAttackSquares = (piece: Piece, from: Square): Square[] => {
+  const dir = piece.color === 'w' ? 1 : -1
+  const squares: Square[] = []
+  for (const df of [-1, 1]) {
+    const file = from.file + df
+    const rank = from.rank + dir
+    if (inBounds(file, rank)) {
+      squares.push({ file, rank })
+    }
+  }
+  return squares
 }
 
 const knightMoves = (board: Board, piece: Piece, from: Square): Square[] => {
@@ -127,60 +136,119 @@ const slidingMoves = (
 const moveSets: Record<PieceType, (board: Board, piece: Piece, from: Square) => Square[]> = {
   P: pawnMoves,
   N: knightMoves,
-  B: (b, p, f) => slidingMoves(b, p, f, [
-    [1, 1],
-    [1, -1],
-    [-1, 1],
-    [-1, -1],
-  ]),
-  R: (b, p, f) => slidingMoves(b, p, f, [
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ]),
-  Q: (b, p, f) => slidingMoves(b, p, f, [
-    [1, 1],
-    [1, -1],
-    [-1, 1],
-    [-1, -1],
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-  ]),
+  B: (board, piece, from) =>
+    slidingMoves(board, piece, from, [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+    ]),
+  R: (board, piece, from) =>
+    slidingMoves(board, piece, from, [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]),
+  Q: (board, piece, from) =>
+    slidingMoves(board, piece, from, [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ]),
   K: kingMoves,
 }
 
-export const getMovesForSquare = (
-  board: Board,
-  from: Square
-): Square[] => {
-  const piece = getPiece(board, from)
+const getPseudoMovesForSquare = (board: Board, from: Square): Square[] => {
+  const piece = board[from.rank][from.file]
   if (!piece) return []
   return moveSets[piece.type](board, piece, from)
 }
 
-export const isLegalMove = (
-  board: Board,
-  from: Square,
-  to: Square
-): boolean => {
-  return getMovesForSquare(board, from).some(
-    (m) => m.file === to.file && m.rank === to.rank
-  )
+const findKingSquare = (board: Board, color: Color): Square | null => {
+  for (let rank = 0; rank < 8; rank += 1) {
+    for (let file = 0; file < 8; file += 1) {
+      const piece = board[rank][file]
+      if (piece?.type === 'K' && piece.color === color) {
+        return { file, rank }
+      }
+    }
+  }
+  return null
 }
 
-export const movePiece = (
-  board: Board,
-  from: Square,
-  to: Square
-): Board => {
+const isSquareAttacked = (board: Board, square: Square, byColor: Color): boolean => {
+  for (let rank = 0; rank < 8; rank += 1) {
+    for (let file = 0; file < 8; file += 1) {
+      const piece = board[rank][file]
+      if (!piece || piece.color !== byColor) continue
+
+      const from = { file, rank }
+      const attacks = piece.type === 'P' ? pawnAttackSquares(piece, from) : getPseudoMovesForSquare(board, from)
+
+      if (attacks.some((m) => m.file === square.file && m.rank === square.rank)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+export const movePiece = (board: Board, from: Square, to: Square): Board => {
   const next = board.map((row) => row.slice())
-  const piece = next[from.rank][from.file]
+  const moving = next[from.rank][from.file]
   next[from.rank][from.file] = null
-  next[to.rank][to.file] = piece
+  next[to.rank][to.file] = moving
   return next
 }
 
 export const otherColor = (color: Color): Color => (color === 'w' ? 'b' : 'w')
+
+export const isInCheck = (board: Board, color: Color): boolean => {
+  const kingSquare = findKingSquare(board, color)
+  if (!kingSquare) return false
+  return isSquareAttacked(board, kingSquare, otherColor(color))
+}
+
+export const getMovesForSquare = (board: Board, from: Square): Square[] => {
+  const piece = board[from.rank][from.file]
+  if (!piece) return []
+
+  return getPseudoMovesForSquare(board, from).filter((to) => {
+    const next = movePiece(board, from, to)
+    return !isInCheck(next, piece.color)
+  })
+}
+
+export const isLegalMove = (board: Board, from: Square, to: Square): boolean =>
+  getMovesForSquare(board, from).some((move) => move.file === to.file && move.rank === to.rank)
+
+export const hasAnyLegalMove = (board: Board, color: Color): boolean => {
+  for (let rank = 0; rank < 8; rank += 1) {
+    for (let file = 0; file < 8; file += 1) {
+      const piece = board[rank][file]
+      if (!piece || piece.color !== color) continue
+      if (getMovesForSquare(board, { file, rank }).length > 0) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+export type GameStatus = 'ongoing' | 'check' | 'checkmate' | 'stalemate'
+
+export const getGameStatus = (board: Board, turn: Color): GameStatus => {
+  const check = isInCheck(board, turn)
+  const hasMove = hasAnyLegalMove(board, turn)
+
+  if (check && !hasMove) return 'checkmate'
+  if (!check && !hasMove) return 'stalemate'
+  if (check) return 'check'
+  return 'ongoing'
+}

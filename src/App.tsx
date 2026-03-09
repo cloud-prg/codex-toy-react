@@ -4,7 +4,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend'
 import './App.css'
 import { createInitialBoard } from './chessInit'
 import type { Board, Square } from './chessTypes'
-import { movePiece, otherColor } from './chessRules'
+import { getGameStatus, isLegalMove, movePiece, otherColor } from './chessRules'
 import { getLegalMovesForTurn } from './chessHelpers'
 import { ChessBoard } from './ChessBoard'
 import { ChessInfo } from './ChessInfo'
@@ -19,12 +19,14 @@ function App() {
     () => getLegalMovesForTurn(board, selected, turn),
     [board, selected, turn]
   )
+  const status = useMemo(() => getGameStatus(board, turn), [board, turn])
 
   const handleSelect = (square: Square) => {
     if (selected && legalMoves.some((m) => m.file === square.file && m.rank === square.rank)) {
       handleMove(selected, square)
       return
     }
+
     const piece = board[square.rank][square.file]
     if (piece && piece.color === turn) {
       setSelected(square)
@@ -36,6 +38,8 @@ function App() {
   const handleMove = (from: Square, to: Square) => {
     const moving = board[from.rank][from.file]
     if (!moving || moving.color !== turn) return
+    if (!isLegalMove(board, from, to)) return
+
     const next = movePiece(board, from, to)
     setBoard(next)
     setTurn(otherColor(turn))
@@ -45,7 +49,7 @@ function App() {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="app">
-        <ChessInfo turn={turn} selectedPiece={selectedPiece} legalMoves={legalMoves} />
+        <ChessInfo turn={turn} selectedPiece={selectedPiece} legalMoves={legalMoves} status={status} />
         <ChessBoard
           board={board}
           selected={selected}
