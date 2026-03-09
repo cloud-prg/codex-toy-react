@@ -1,6 +1,6 @@
-import type { Piece, Square } from './chessTypes'
-import type { GameStatus } from './chessRules'
-import { pieceText } from './chessTypes'
+import type { Piece, Square } from '../types'
+import type { GameStatus } from '../chess/rules'
+import { pieceText } from '../types'
 
 export type ChessInfoProps = {
   turn: 'w' | 'b'

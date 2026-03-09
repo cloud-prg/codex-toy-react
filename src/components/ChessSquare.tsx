@@ -1,9 +1,7 @@
 import { useDrag, useDrop } from 'react-dnd'
-import type { Board, Square } from './chessTypes'
-import { pieceText } from './chessTypes'
-import type { DragItem } from './dndTypes'
-import { ItemTypes } from './dndTypes'
-import { canDropOnSquare, squareEquals, squareInMoves } from './chessHelpers'
+import type { Board, Square } from '../types'
+import { pieceText, ItemTypes, type DragItem } from '../types'
+import { canDropOnSquare, squareEquals, squareInMoves } from '../chess/helpers'
 
 export type ChessSquareProps = {
   board: Board

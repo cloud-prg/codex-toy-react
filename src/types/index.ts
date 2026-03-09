@@ -1,3 +1,4 @@
+// ============ 棋盘与棋子类型 ============
 export type Color = 'w' | 'b'
 export type PieceType = 'K' | 'Q' | 'R' | 'B' | 'N' | 'P'
 
@@ -25,4 +26,13 @@ export const pieceText = (piece: Piece): string => {
     P: 'P',
   }
   return piece.color === 'w' ? map[piece.type] : map[piece.type].toLowerCase()
+}
+
+// ============ 拖拽 (react-dnd) ============
+export const ItemTypes = {
+  PIECE: 'piece',
+} as const
+
+export type DragItem = {
+  from: Square
 }

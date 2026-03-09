@@ -1,6 +1,6 @@
-import type { Board, Square } from './chessTypes'
+import type { Board, Square } from '../types'
+import { squareKey } from '../chess/helpers'
 import { ChessSquare } from './ChessSquare'
-import { squareKey } from './chessHelpers'
 
 export type ChessBoardProps = {
   board: Board

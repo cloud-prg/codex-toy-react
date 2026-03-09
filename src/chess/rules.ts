@@ -1,4 +1,4 @@
-import type { Board, Color, Piece, PieceType, Square } from './chessTypes'
+import type { Board, Color, Piece, PieceType, Square } from '../types'
 
 const inBounds = (file: number, rank: number): boolean =>
   file >= 0 && file < 8 && rank >= 0 && rank < 8
@@ -6,7 +6,8 @@ const inBounds = (file: number, rank: number): boolean =>
 const isEnemy = (a: Piece, b: Piece | null): boolean =>
   b !== null && a.color !== b.color
 
-const addIfEmptyOrEnemy = (
+/** 若格可达（空或敌）则加入 moves；返回该格是否为空（空则射线可继续延伸，敌/己则不可） */
+const addReachableSquareReturnCanExtendRay = (
   board: Board,
   piece: Piece,
   file: number,
@@ -50,21 +51,25 @@ const addRayMoves = (
   }
 }
 
+/** 兵的走法：直走 1 格（或起始行 2 格）、斜吃 1 格。 */
 const pawnMoves = (board: Board, piece: Piece, from: Square): Square[] => {
   const moves: Square[] = []
-  const dir = piece.color === 'w' ? 1 : -1
-  const startRank = piece.color === 'w' ? 1 : 6
+  const dir = piece.color === 'w' ? 1 : -1   // 白方往上(rank+1)，黑方往下(rank-1)
+  const startRank = piece.color === 'w' ? 1 : 6  // 白兵起始第2行(rank1)，黑兵第7行(rank6)
 
+  // 直走：正前方 1 格
   const oneRank = from.rank + dir
   if (inBounds(from.file, oneRank) && board[oneRank][from.file] === null) {
     moves.push({ file: from.file, rank: oneRank })
 
+    // 起始行可直走 2 格（正前方两格都要空）
     const twoRank = from.rank + dir * 2
     if (from.rank === startRank && board[twoRank][from.file] === null) {
       moves.push({ file: from.file, rank: twoRank })
     }
   }
 
+  // 斜吃：左前、右前两格，有敌方才能走
   for (const df of [-1, 1]) {
     const file = from.file + df
     const rank = from.rank + dir
@@ -104,7 +109,7 @@ const knightMoves = (board: Board, piece: Piece, from: Square): Square[] => {
     [-1, 2],
   ]
   for (const [df, dr] of deltas) {
-    addIfEmptyOrEnemy(board, piece, from.file + df, from.rank + dr, moves)
+    addReachableSquareReturnCanExtendRay(board, piece, from.file + df, from.rank + dr, moves)
   }
   return moves
 }
@@ -114,7 +119,7 @@ const kingMoves = (board: Board, piece: Piece, from: Square): Square[] => {
   for (let df = -1; df <= 1; df += 1) {
     for (let dr = -1; dr <= 1; dr += 1) {
       if (df === 0 && dr === 0) continue
-      addIfEmptyOrEnemy(board, piece, from.file + df, from.rank + dr, moves)
+      addReachableSquareReturnCanExtendRay(board, piece, from.file + df, from.rank + dr, moves)
     }
   }
   return moves

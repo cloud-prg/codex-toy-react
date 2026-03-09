@@ -1,5 +1,5 @@
-import type { Board, Square } from './chessTypes'
-import { isLegalMove, getMovesForSquare } from './chessRules'
+import type { Board, Square } from '../types'
+import { isLegalMove, getMovesForSquare } from './rules'
 
 export const squareKey = (sq: Square): string => `${sq.file}-${sq.rank}`
 

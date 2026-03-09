@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createInitialBoard } from './chessInit'
-import { getMovesForSquare, movePiece } from './chessRules'
+import { createInitialBoard } from './init'
+import { getMovesForSquare, movePiece } from './rules'
 
 const sq = (file: number, rank: number) => ({ file, rank })
 
