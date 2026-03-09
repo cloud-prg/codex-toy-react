@@ -1,4 +1,4 @@
-import { Board, Piece } from './chessTypes'
+import type { Board, Piece } from './chessTypes'
 
 const emptyRow = (): (Piece | null)[] => Array.from({ length: 8 }, () => null)
 

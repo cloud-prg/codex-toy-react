@@ -1,4 +1,4 @@
-import { Board, Color, Piece, PieceType, Square } from './chessTypes'
+import type { Board, Color, Piece, PieceType, Square } from './chessTypes'
 
 const inBounds = (file: number, rank: number): boolean =>
   file >= 0 && file < 8 && rank >= 0 && rank < 8
